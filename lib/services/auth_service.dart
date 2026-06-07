@@ -159,7 +159,6 @@ class GoogleAuthService {
         "place": "",
         "createdAt": FieldValue.serverTimestamp()
       });
-
     }
   }
 

@@ -33,6 +33,7 @@ dependencies:
   google_sign_in: ^7.2.0
   zego_uikit_prebuilt_call: ^4.24.2
   zego_uikit_signaling_plugin: ^2.8.13
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

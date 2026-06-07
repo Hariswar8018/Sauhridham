@@ -1,9 +1,9 @@
 // lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'chat_list_screen.dart';
 import 'call_history_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -58,19 +58,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: Center(
-        child: Text(
-          'Settings will be added here.',
-          style: GoogleFonts.inter(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}

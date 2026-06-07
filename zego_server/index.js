@@ -35,7 +35,7 @@ app.get('/api/token', (req, res) => {
 
     try {
         const token = generateToken04(appId, userID, serverSecret, expiry, payStr);
-        return res.json({ token });
+        return res.json({ token, appId });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }
