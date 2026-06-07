@@ -1,5 +1,14 @@
 // lib/services/firestore_user_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../model/usermodel.dart';
+
+final userProfileProvider = FutureProvider.family<UserModel?, String>((ref, uid) async {
+  if (uid.isEmpty) return null;
+  final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+  if (!doc.exists || doc.data() == null) return null;
+  return UserModel.fromMap(doc.data()!);
+});
 
 class FirestoreUserService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -17,8 +26,10 @@ class FirestoreUserService {
     required String place,
   }) async {
     final data = {
+      'id': uid,
       'uid': uid,
       'email': email,
+      'name': username,
       'username': username,
       'phone': phone,
       'age': age,

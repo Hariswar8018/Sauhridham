@@ -1,18 +1,16 @@
-
-
-
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'home_screen.dart';
 import 'register_screen.dart';
 import 'package:sauhridam/services/auth_service.dart';
-import 'package:sauhridam/widget/global.widget.dart'; // GlobalWidget
+import 'package:sauhridam/widget/widget.dart'; // GlobalWidget
 
 final loginProvider = Provider((ref) => FirebaseAuth.instance);
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -26,6 +24,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool loading = false;
 
   Future<void> login() async {
+    if (emailC.text.trim().isEmpty || passC.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter both email and password")),
+      );
+      return;
+    }
     setState(() => loading = true);
     try {
       final user = await auth.loginOrCreate(
@@ -43,11 +47,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => RegisterScreen(uid: user.uid)),
+          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Authentication failed")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
-      setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
@@ -66,11 +84,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => RegisterScreen(uid: user.uid)),
+          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Google Sign-In failed")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
-      setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
@@ -84,27 +116,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
-            Center(child: Image.asset("assets/logo.jpg", width: 140)),
+            const SizedBox(height: 40),
+            Center(
+              child: Image.network(
+                "https://cdn-icons-gif.flaticon.com/12999/12999687.gif",
+                width: 140,
+              ),
+            ),
+            const SizedBox(height: 40),
             const Text(
               "Welcome Back",
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 24,
+                color: Colors.black,
+              ),
             ),
             const Text(
-              "Sign in to manage your Appointments and manage live Tokens",
+              "Sign in to do Live Chats, Video & Voice Calls with ease",
               style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 17,
-                  color: Colors.grey),
+                fontWeight: FontWeight.w500,
+                fontSize: 17,
+                color: Colors.black,
+              ),
             ),
+            SizedBox(height: 10),
             TextField(
+              style: const TextStyle(
+                color: Colors.black, // typed text color
+              ),
               controller: emailC,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: InputDecoration(
+                hintText: "Email",
+                hintStyle: TextStyle(color: Colors.black54),
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black, width: 2),
+                ),
+              ),
             ),
+
+            const SizedBox(height: 16),
+
             TextField(
               controller: passC,
-              decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
+              style: const TextStyle(
+                color: Colors.black, // typed text color
+              ),
+              decoration: InputDecoration(
+                hintText: "Password",
+                labelStyle: TextStyle(color: Colors.black),
+                hintStyle: TextStyle(color: Colors.black54),
+
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.black, width: 2),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             loading
@@ -119,7 +198,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: GlobalWidget.contain(w, "Login"),
                   ),
             const SizedBox(height: 10),
-            loading ? const SizedBox() : const Center(child: Text("OR")),
+            loading
+                ? const SizedBox()
+                : const Center(
+                    child: Text("OR", style: TextStyle(color: Colors.black)),
+                  ),
             const SizedBox(height: 10),
             loading
                 ? const SizedBox()
@@ -141,8 +224,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const Text(
                             "Login with Google",
                             style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w800),
+                              color: Colors.black,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ],
                       ),

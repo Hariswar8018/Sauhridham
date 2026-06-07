@@ -26,7 +26,7 @@ class GlobalWidget{
       color: GlobalWidget.color,
     ),
   );
-  static Widget empty(double w,String str )=>Container(
+  static Widget empty(double w,String str )=>SizedBox(
     width: w,height: 90,
     child: Column(
       children: [

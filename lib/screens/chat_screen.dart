@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/firestore_user_service.dart';
 
 // Provider for message stream based on chatId
 final chatMessagesProvider = StreamProvider.family<List<QueryDocumentSnapshot>, String>((ref, chatId) {
@@ -15,8 +16,13 @@ final chatMessagesProvider = StreamProvider.family<List<QueryDocumentSnapshot>, 
       .map((snapshot) => snapshot.docs);
 });
 
+// Provider for streaming a single chat document
+final chatDocProvider = StreamProvider.family.autoDispose<DocumentSnapshot, String>((ref, chatId) {
+  return FirebaseFirestore.instance.collection('chats').doc(chatId).snapshots();
+});
+
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({Key? key}) : super(key: key);
+  const ChatScreen({super.key});
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -56,12 +62,90 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _messageController.clear();
   }
 
+  void _initiateCall(String currentUid, String otherUid, String type) {
+    final callId = 'call_${currentUid.substring(0, 5)}_${otherUid.substring(0, 5)}_${DateTime.now().millisecondsSinceEpoch}';
+    Navigator.pushNamed(
+      context,
+      '/call',
+      arguments: {
+        'callId': callId,
+        'type': type,
+        'participants': [currentUid, otherUid],
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(chatMessagesProvider(chatId));
+    final chatDocAsync = ref.watch(chatDocProvider(chatId));
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat'),
+        title: chatDocAsync.when(
+          data: (chatDoc) {
+            final data = chatDoc.data() as Map<String, dynamic>?;
+            final participants = data?['participants'] as List?;
+            final currentUid = FirebaseAuth.instance.currentUser?.uid;
+            final otherId = participants?.firstWhere(
+              (p) => p != currentUid,
+              orElse: () => '',
+            ) as String?;
+
+            if (otherId == null || otherId.isEmpty) return const Text('Chat');
+
+            final otherUserAsync = ref.watch(userProfileProvider(otherId));
+            return otherUserAsync.when(
+              data: (user) => Text(user?.name ?? otherId),
+              loading: () => const Text('Loading name...'),
+              error: (_, _) => const Text('Chat'),
+            );
+          },
+          loading: () => const Text('Loading...'),
+          error: (_, _) => const Text('Chat'),
+        ),
+        actions: [
+          chatDocAsync.when(
+            data: (chatDoc) {
+              final data = chatDoc.data() as Map<String, dynamic>?;
+              final participants = data?['participants'] as List?;
+              final currentUid = FirebaseAuth.instance.currentUser?.uid;
+              final otherId = participants?.firstWhere(
+                (p) => p != currentUid,
+                orElse: () => '',
+              ) as String?;
+
+              if (otherId == null || otherId.isEmpty || currentUid == null) {
+                return const SizedBox();
+              }
+
+              final otherUserAsync = ref.watch(userProfileProvider(otherId));
+              return otherUserAsync.when(
+                data: (user) {
+                  if (user == null) return const SizedBox();
+                  return Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.phone),
+                        onPressed: () => _initiateCall(currentUid, user.id, 'audio'),
+                        tooltip: 'Voice Call',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.videocam),
+                        onPressed: () => _initiateCall(currentUid, user.id, 'video'),
+                        tooltip: 'Video Call',
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox(),
+                error: (_, _) => const SizedBox(),
+              );
+            },
+            loading: () => const SizedBox(),
+            error: (_, _) => const SizedBox(),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -86,7 +170,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           color: isMe ? Colors.greenAccent.shade200 : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(data['text'] ?? ''),
+                        child: Text(
+                          data['text'] ?? '',
+                          style: TextStyle(
+                            color: isMe ? Colors.black : Colors.black87,
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -122,3 +211,4 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 }
+

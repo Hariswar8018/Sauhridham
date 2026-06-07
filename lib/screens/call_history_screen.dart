@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/firestore_user_service.dart';
 
 // Provider that streams call logs for the current user
 final callHistoryProvider = StreamProvider.autoDispose<List<QueryDocumentSnapshot>>((ref) {
@@ -19,7 +20,7 @@ final callHistoryProvider = StreamProvider.autoDispose<List<QueryDocumentSnapsho
 });
 
 class CallHistoryScreen extends ConsumerWidget {
-  const CallHistoryScreen({Key? key}) : super(key: key);
+  const CallHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,32 +35,24 @@ class CallHistoryScreen extends ConsumerWidget {
           return ListView.builder(
             itemCount: calls.length,
             itemBuilder: (context, index) {
-              final data = calls[index].data() as Map<String, dynamic>;
+              final callDoc = calls[index];
+              final data = callDoc.data() as Map<String, dynamic>;
               final isVideo = data['type'] == 'video';
               final timestamp = (data['startedAt'] as Timestamp?)?.toDate();
               final durationSec = data['duration'] ?? 0;
               final participants = (data['participants'] as List?) ?? [];
+              final currentUid = FirebaseAuth.instance.currentUser?.uid;
               final otherParticipant = participants.firstWhere(
-                (p) => p != FirebaseAuth.instance.currentUser?.uid,
+                (p) => p != currentUid,
                 orElse: () => 'Unknown',
               );
-              return ListTile(
-                leading: Icon(isVideo ? Icons.videocam : Icons.phone),
-                title: Text('Call with $otherParticipant'),
-                subtitle: Text(
-                  '${timestamp?.toLocal().toString() ?? '...'} • ${durationSec}s',
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.call),
-                  onPressed: () {
-                    // Re‑initiate call – navigate to CallScreen with same callId
-                    Navigator.pushNamed(
-                      context,
-                      '/call',
-                      arguments: {'callId': calls[index].id, 'type': data['type']},
-                    );
-                  },
-                ),
+
+              return CallHistoryTile(
+                callDoc: callDoc,
+                otherParticipant: otherParticipant,
+                isVideo: isVideo,
+                timestamp: timestamp,
+                durationSec: durationSec,
               );
             },
           );
@@ -70,3 +63,78 @@ class CallHistoryScreen extends ConsumerWidget {
     );
   }
 }
+
+class CallHistoryTile extends ConsumerWidget {
+  final QueryDocumentSnapshot callDoc;
+  final String otherParticipant;
+  final bool isVideo;
+  final DateTime? timestamp;
+  final int durationSec;
+
+  const CallHistoryTile({
+    super.key,
+    required this.callDoc,
+    required this.otherParticipant,
+    required this.isVideo,
+    required this.timestamp,
+    required this.durationSec,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final otherUserAsync = ref.watch(userProfileProvider(otherParticipant));
+
+    return otherUserAsync.when(
+      data: (user) {
+        final name = user?.name ?? otherParticipant;
+        final timeString = timestamp != null
+            ? '${timestamp!.day.toString().padLeft(2, '0')}/${timestamp!.month.toString().padLeft(2, '0')}/${timestamp!.year} ${timestamp!.hour.toString().padLeft(2, '0')}:${timestamp!.minute.toString().padLeft(2, '0')}'
+            : '...';
+        return ListTile(
+          leading: Icon(
+            isVideo ? Icons.videocam : Icons.phone,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          title: Text('Call with $name'),
+          subtitle: Text(
+            '$timeString • ${durationSec}s',
+            style: const TextStyle(fontSize: 12),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.call),
+            color: const Color(0xFF25D366), // WhatsApp green
+            onPressed: () {
+              final currentUid = FirebaseAuth.instance.currentUser?.uid;
+              Navigator.pushNamed(
+                context,
+                '/call',
+                arguments: {
+                  'callId': callDoc.id,
+                  'type': isVideo ? 'video' : 'audio',
+                  'participants': currentUid != null ? [currentUid, otherParticipant] : [otherParticipant],
+                },
+              );
+            },
+          ),
+        );
+      },
+      loading: () => ListTile(
+        leading: Icon(isVideo ? Icons.videocam : Icons.phone, color: Colors.grey),
+        title: Text('Call with $otherParticipant (Loading...)'),
+        subtitle: Text(
+          '${timestamp?.toLocal().toString().substring(0, 16) ?? '...'} • ${durationSec}s',
+          style: const TextStyle(fontSize: 12),
+        ),
+      ),
+      error: (_, _) => ListTile(
+        leading: Icon(isVideo ? Icons.videocam : Icons.phone, color: Colors.red),
+        title: Text('Call with $otherParticipant'),
+        subtitle: Text(
+          '${timestamp?.toLocal().toString().substring(0, 16) ?? '...'} • ${durationSec}s',
+          style: const TextStyle(fontSize: 12),
+        ),
+      ),
+    );
+  }
+}
+

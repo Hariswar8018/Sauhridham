@@ -1,3 +1,5 @@
+
+
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,12 +7,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'screens/auth_wrapper.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
-import 'screens/chat_screen.dart';
-import 'screens/call_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'services/notification_service.dart';
+import 'screens/chat_screen.dart';
+import 'screens/call_screen.dart';
+import 'screens/search_screen.dart';
 
 // Background message handler (required for Android & iOS)
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -19,7 +20,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
   // Handle background notification (e.g., store call log, show notification)
   // For simplicity, we just print the message.
-  print('Background message: \${message.messageId}');
+  print('Background message: ${message.messageId}');
 }
 
 void main() async {
@@ -32,7 +33,7 @@ void main() async {
 }
 
 class MyApp extends ConsumerWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,6 +50,11 @@ class MyApp extends ConsumerWidget {
             textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
           ),
       home: const AuthWrapper(),
+      routes: {
+        '/chat': (context) => const ChatScreen(),
+        '/call': (context) => const CallScreen(),
+        '/search': (context) => const SearchScreen(),
+      },
       builder: (context, child) {
         // Initialize notification listeners once
         NotificationService.init(context, ref);
@@ -58,3 +64,4 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
+
