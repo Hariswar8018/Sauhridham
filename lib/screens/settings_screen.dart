@@ -97,7 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         // Display extra profile fields
                         _buildProfileField(context, Icons.info_outline, 'Age', '${userModel?.age ?? 0}'),
                         _buildProfileField(context, Icons.transgender, 'Gender', userModel?.gender.isNotEmpty == true ? userModel!.gender : 'Not specified'),
-                        _buildProfileField(context, Icons.phone_android, 'Phone', userModel?.phone != null && userModel!.phone != 0 ? '+${userModel.phone}' : 'Not specified'),
+                        _buildProfileField(context, Icons.phone_android, 'Phone', userModel?.phone.isNotEmpty == true ? userModel!.phone : 'Not specified'),
                         _buildProfileField(context, Icons.work_outline, 'Occupation', userModel?.occupation.isNotEmpty == true ? userModel!.occupation : 'Not specified'),
                         _buildProfileField(context, Icons.location_on_outlined, 'Place', userModel?.place.isNotEmpty == true ? userModel!.place : 'Not specified'),
                         const SizedBox(height: 16),
@@ -264,7 +264,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: currentProfile?.name ?? '');
     final ageController = TextEditingController(text: currentProfile?.age != null && currentProfile!.age != 0 ? currentProfile.age.toString() : '');
-    final phoneController = TextEditingController(text: currentProfile?.phone != null && currentProfile!.phone != 0 ? currentProfile.phone.toString() : '');
+    final phoneController = TextEditingController(text: currentProfile?.phone ?? '');
     final occupationController = TextEditingController(text: currentProfile?.occupation ?? '');
     final placeController = TextEditingController(text: currentProfile?.place ?? '');
     String gender = currentProfile?.gender ?? 'Male';
@@ -365,11 +365,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           border: OutlineInputBorder(),
                         ),
                         validator: (val) {
-                          if (val != null && val.isNotEmpty) {
-                            final parsed = int.tryParse(val);
-                            if (parsed == null) {
-                              return 'Please enter a valid phone number';
-                            }
+                          if (val == null || val.trim().isEmpty) {
+                            return 'Phone number cannot be empty';
                           }
                           return null;
                         },
@@ -448,23 +445,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                         });
 
                                         try {
-                                          final name = nameController.text.trim();
-                                          final age = int.tryParse(ageController.text.trim()) ?? 0;
-                                          final phone = int.tryParse(phoneController.text.trim()) ?? 0;
-                                          final occupation = occupationController.text.trim();
-                                          final place = placeController.text.trim();
-                                          final email = currentProfile?.email ?? FirebaseAuth.instance.currentUser?.email ?? '';
+                                           final name = nameController.text.trim();
+                                           final age = int.tryParse(ageController.text.trim()) ?? 0;
+                                           final phone = phoneController.text.trim();
+                                           final occupation = occupationController.text.trim();
+                                           final place = placeController.text.trim();
+                                           final email = currentProfile?.email ?? FirebaseAuth.instance.currentUser?.email ?? '';
 
-                                          final updatedProfile = {
-                                            'id': uid,
-                                            'name': name,
-                                            'age': age,
-                                            'phone': phone,
-                                            'gender': gender,
-                                            'occupation': occupation,
-                                            'place': place,
-                                            'email': email,
-                                          };
+                                           final updatedProfile = {
+                                             'id': uid,
+                                             'name': name,
+                                             'age': age,
+                                             'phone': phone,
+                                             'gender': gender,
+                                             'occupation': occupation,
+                                             'place': place,
+                                             'email': email,
+                                           };
 
                                           await FirebaseFirestore.instance
                                               .collection('users')

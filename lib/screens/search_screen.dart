@@ -120,22 +120,45 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void _startCall(UserModel targetUser, String type) {
+  Future<void> _startCall(UserModel targetUser, String type) async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     if (currentUid == null) return;
 
     // Generate unique room ID
     final callId = 'call_${currentUid.substring(0, 5)}_${targetUser.id.substring(0, 5)}_${DateTime.now().millisecondsSinceEpoch}';
 
-    Navigator.pushNamed(
-      context,
-      '/call',
-      arguments: {
-        'callId': callId,
-        'type': type,
-        'participants': [currentUid, targetUser.id],
-      },
-    );
+    // Get current user's name
+    String callerName = 'Guest';
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
+      if (userDoc.exists) {
+        callerName = userDoc.data()?['name'] ?? userDoc.data()?['username'] ?? 'User';
+      }
+    } catch (_) {}
+
+    // Create call signaling document in Firestore
+    await FirebaseFirestore.instance.collection('calls').doc(callId).set({
+      'id': callId,
+      'callerId': currentUid,
+      'callerName': callerName,
+      'receiverId': targetUser.id,
+      'type': type,
+      'status': 'ringing',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    if (mounted) {
+      Navigator.pushNamed(
+        context,
+        '/call',
+        arguments: {
+          'callId': callId,
+          'type': type,
+          'participants': [currentUid, targetUser.id],
+          'isCaller': true,
+        },
+      );
+    }
   }
 
   Color _getAvatarColor(String name) {

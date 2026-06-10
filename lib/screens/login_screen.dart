@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
+import 'phone_login_screen.dart';
 import 'package:sauhridam/services/auth_service.dart';
 import 'package:sauhridam/widget/widget.dart'; // GlobalWidget
 
@@ -225,6 +226,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             "Login with Google",
                             style: TextStyle(
                               color: Colors.black,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+            const SizedBox(height: 10),
+            loading
+                ? const SizedBox()
+                : InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PhoneLoginScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: w,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.phone, color: Colors.white),
+                          const SizedBox(width: 15),
+                          const Text(
+                            "Login with Phone",
+                            style: TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.w800,
                             ),
                           ),

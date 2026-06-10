@@ -52,7 +52,7 @@ class AuthService {
     final data = doc.data();
     if (data == null) return false;
     final phone = data['phone'];
-    if (phone == null || phone == "" || phone == 0) {
+    if (phone == null || phone == "") {
       return false;
     }
     return true;

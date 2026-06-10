@@ -3,7 +3,7 @@ class UserModel {
   String name;
   int age;
   String gender;
-  int phone;
+  String phone;
   String occupation;
   String place;
   String email;
@@ -37,11 +37,11 @@ class UserModel {
       id: map["id"]?.toString() ?? map["uid"]?.toString() ?? "",
       name: map["name"]?.toString() ?? map["username"]?.toString() ?? "",
       age: int.tryParse(map["age"]?.toString() ?? "") ?? 0,
-      phone: int.tryParse(map["phone"]?.toString() ?? "") ?? 0,
+      phone: map["phone"]?.toString() ?? "",
       gender: map["gender"]?.toString() ?? "",
       occupation: map["occupation"]?.toString() ?? "",
       place: map["place"]?.toString() ?? "",
       email: map["email"]?.toString() ?? "",
     );
   }
-}
+}
