@@ -7,6 +7,7 @@ import 'register_screen.dart';
 import 'phone_login_screen.dart';
 import 'package:sauhridam/services/auth_service.dart';
 import 'package:sauhridam/widget/widget.dart'; // GlobalWidget
+import 'forgot_password_screen.dart';
 
 final loginProvider = Provider((ref) => FirebaseAuth.instance);
 
@@ -121,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Center(
               child: Image.network(
                 "https://cdn-icons-gif.flaticon.com/12999/12999687.gif",
-                width: 140,
+                width: 90,
               ),
             ),
             const SizedBox(height: 40),
@@ -186,7 +187,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  );
+                },
+                child: const Text(
+                  "Forgot Password?",
+                  style: TextStyle(
+                    color: Color(0xff014A8E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
             loading
                 ? const Center(
                     child: CircularProgressIndicator(

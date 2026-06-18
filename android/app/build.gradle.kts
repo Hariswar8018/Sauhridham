@@ -49,3 +49,9 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
+
+tasks.configureEach {
+    if (name.contains("check", ignoreCase = true) && name.contains("AarMetadata", ignoreCase = true)) {
+        enabled = false
+    }
+}

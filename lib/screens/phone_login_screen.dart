@@ -26,15 +26,19 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
   int _resendCountdown = 60;
   Timer? _timer;
+  final _otpFocusNode = FocusNode();
+
 
   @override
   void dispose() {
     _phoneController.dispose();
     _countryCodeController.dispose();
     _otpController.dispose();
+    _otpFocusNode.dispose();
     _timer?.cancel();
     super.dispose();
   }
+
 
   void _startCountdown() {
     _resendCountdown = 60;
@@ -73,14 +77,17 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: fullPhoneNumber,
         verificationCompleted: (PhoneAuthCredential credential) async {
+          if (!mounted) return;
           // Auto-retrieval or instant verification
           await _signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
           setState(() => _isLoading = false);
           _showSnackBar(e.message ?? "Verification failed. Check your number.");
         },
         codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
           setState(() {
             _verificationId = verificationId;
             _resendToken = resendToken;
@@ -91,15 +98,18 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           _showSnackBar("OTP code sent to $fullPhoneNumber");
         },
         codeAutoRetrievalTimeout: (String verificationId) {
+          if (!mounted) return;
           _verificationId = verificationId;
         },
         forceResendingToken: _resendToken,
         timeout: const Duration(seconds: 60),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar("Error: ${e.toString()}");
     }
+
   }
 
   Future<void> _verifyOtp() async {
@@ -118,9 +128,11 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       );
       await _signInWithCredential(credential);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar("Incorrect OTP. Please try again.");
     }
+
   }
 
   Future<void> _signInWithCredential(AuthCredential credential) async {
@@ -147,10 +159,12 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnackBar("Authentication failed: ${e.toString()}");
     }
   }
+
 
   void _showSnackBar(String msg) {
     if (!mounted) return;
@@ -343,81 +357,91 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       ),
               ] else ...[
                 // OTP Entry Input fields using custom visual code grid
-                Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Hidden TextField for input
-                      Opacity(
-                        opacity: 0,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 60,
-                          child: TextField(
-                            controller: _otpController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 6,
-                            autofocus: true,
-                            onChanged: (val) {
-                              setState(() {});
-                              if (val.length == 6) {
-                                _verifyOtp();
-                              }
-                            },
-                            decoration: const InputDecoration(
-                              counterText: "",
+                GestureDetector(
+                  onTap: () {
+                    _otpFocusNode.requestFocus();
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Hidden TextField for input
+                        Opacity(
+                          opacity: 0,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 60,
+                            child: TextField(
+                              focusNode: _otpFocusNode,
+                              controller: _otpController,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              autofocus: true,
+                              onChanged: (val) {
+                                setState(() {});
+                                if (val.length == 6) {
+                                  _verifyOtp();
+                                }
+                              },
+                              decoration: const InputDecoration(
+                                counterText: "",
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      // Visual Digit Boxes
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(6, (index) {
-                          String char = "";
-                          if (_otpController.text.length > index) {
-                            char = _otpController.text[index];
-                          }
-                          bool isFocused = _otpController.text.length == index;
+                        // Visual Digit Boxes
+                        IgnorePointer(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: List.generate(6, (index) {
+                              String char = "";
+                              if (_otpController.text.length > index) {
+                                char = _otpController.text[index];
+                              }
+                              bool isFocused = _otpController.text.length == index;
 
-                          return Container(
-                            width: size.width * 0.12,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isFocused
-                                    ? const Color(0xFF25D366)
-                                    : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
-                                width: isFocused ? 2 : 1.2,
-                              ),
-                              boxShadow: isFocused
-                                  ? [
-                                      BoxShadow(
-                                        color: const Color(0xFF25D366).withOpacity(0.2),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      )
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Text(
-                                char,
-                                style: GoogleFonts.outfit(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black87,
+                              return Container(
+                                width: size.width * 0.12,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isFocused
+                                        ? const Color(0xFF25D366)
+                                        : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+                                    width: isFocused ? 2 : 1.2,
+                                  ),
+                                  boxShadow: isFocused
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF25D366).withOpacity(0.2),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
+                                          )
+                                        ]
+                                      : null,
                                 ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ],
+                                child: Center(
+                                  child: Text(
+                                    char,
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+
                 const SizedBox(height: 36),
                 
                 // Countdown/Resend row

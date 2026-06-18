@@ -93,12 +93,12 @@ class GoogleAuthService {
 
       if (_googleSignIn.supportsAuthenticate()) {
         final result = await _googleSignIn.authenticate();
+        if (result == null) return null;
 
-        final auth = result.authentication;
+        final auth = await result.authentication;
 
         final credential = GoogleAuthProvider.credential(
           idToken: auth.idToken,
-          accessToken: auth.idToken,
         );
 
         final userCred =
@@ -125,12 +125,12 @@ class GoogleAuthService {
     if (event is GoogleSignInAuthenticationEventSignIn) {
 
       final account = event.user;
+      if (account == null) return;
 
-      final googleAuth = account.authentication;
+      final googleAuth = await account.authentication;
 
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
-        accessToken: googleAuth.idToken,
       );
 
       final userCred =

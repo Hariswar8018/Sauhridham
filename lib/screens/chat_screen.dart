@@ -477,11 +477,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
                 // Redesigned WhatsApp Style Input container
                 Padding(
-                  padding: EdgeInsets.only(
+                  padding: const EdgeInsets.only(
                     left: 8.0,
                     right: 8.0,
                     top: 6.0,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 8.0,
+                    bottom: 8.0,
                   ),
                   child: SafeArea(
                     child: Row(
